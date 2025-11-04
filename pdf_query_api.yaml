@@ -1,0 +1,106 @@
+openapi: 3.0.1
+info:
+  title: PDF Query API
+  description: >
+    Search and fetch content from uploaded support ticket PDFs stored on GitHub.
+    Supports both keyword and regular expression (regex) search to improve query flexibility and accuracy.
+  version: 1.1.0
+
+servers:
+  - url: https://nonvolatilized-singly-lexi.ngrok-free.dev
+
+paths:
+  /query:
+    get:
+      summary: Search PDFs for a keyword or regex pattern
+      operationId: searchPDFs
+      parameters:
+        - name: q
+          in: query
+          description: Keyword or phrase to search in PDFs.
+          required: true
+          schema:
+            type: string
+        - name: use_regex
+          in: query
+          description: Set to true to interpret the query as a regex pattern.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: case_sensitive
+          in: query
+          description: Perform a case-sensitive search (default is false).
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: JSON results containing matched snippets and metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                    description: The search term or regex used.
+                  regex_enabled:
+                    type: boolean
+                    description: Indicates if regex mode was active.
+                  match_count:
+                    type: integer
+                    description: Number of matches found across all PDFs.
+                  results:
+                    type: array
+                    description: List of matching snippets and their PDF source URLs.
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                          description: GitHub file URL where the match was found.
+                        snippet:
+                          type: string
+                          description: Text excerpt containing the match.
+                        page_number:
+                          type: integer
+                          description: Page number where the match occurred.
+                        confidence:
+                          type: number
+                          format: float
+                          description: Confidence score of match (0–1 scale).
+                  message:
+                    type: string
+                    example: "5 matches found across 3 PDFs."
+        '400':
+          description: Invalid or missing query parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Query parameter 'q' is required."
+        '422':
+          description: Invalid regex pattern or search parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid regular expression syntax."
+        '500':
+          description: Server error during search or PDF parsing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal server error while processing PDFs."
